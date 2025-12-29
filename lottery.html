@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>随机抽奖转盘</title>
+
+<style>
+/* Base page styles */
+:root{
+  --bg:#0f1720;
+  --card:#0b1220;
+  --muted:#9aa4b2;
+  --accent:#39a2db;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter, "Helvetica Neue", Arial, sans-serif;
+  color:#e6eef6;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  padding:20px;
+  min-height:100vh;
+  position: relative;
+  background-color: var(--bg);
+}
+/* 背景容器样式 */
+.container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  --s: 200px; /* control the size */
+  --c1: #1d1d1d;
+  --c2: #4e4f51;
+  --c3: #3c3c3c;
+
+  background: repeating-conic-gradient(
+        from 30deg,
+        #0000 0 120deg,
+        var(--c3) 0 180deg
+      )
+      calc(0.5 * var(--s)) calc(0.5 * var(--s) * 0.577),
+    repeating-conic-gradient(
+      from 30deg,
+      var(--c1) 0 60deg,
+      var(--c2) 0 120deg,
+      var(--c3) 0 180deg
+    );
+  background-size: var(--s) calc(var(--s) * 0.577);
+  z-index: -1; /* 置于所有内容下方 */
+  pointer-events: none;
+}
+
+.app{
+  max-width:1100px;
+  margin:0 auto;
+  position:relative;
+  z-index: 1;
+}
+header h1{margin:8px 0 18px;font-weight:600;text-align:center}
+
+/* layout */
+.controls{
+  display:flex;
+  gap:18px;
+  align-items:flex-start;
+  flex-wrap:wrap;
+}
+.left{
+  flex:1;
+  min-width:300px;
+  max-width:540px;
+  margin:0 auto;
+}
+.right{
+  flex:1;
+  min-width:300px;
+}
+.wheel-wrap{
+  position:relative;
+  width:100%;
+  max-width:500px;
+  height:500px;
+  border-radius:15px;
+  margin:0 auto 10px;
+  background: rgba(11, 18, 32, 0.7); /* 半透明背景 */
+  border: 1px solid rgba(57, 162, 219, 0.3); /* 浅蓝色边框 */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3), /* 外部阴影 */
+    inset 0 0 30px rgba(57, 162, 219, 0.1); /* 内部发光效果 */
+  backdrop-filter: blur(5px); /* 毛玻璃效果 */
+  overflow: hidden;
+}
+/* 转盘背景光效 */
+.wheel-wrap::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at center,
+    rgba(57, 162, 219, 0.1) 0%,
+    transparent 70%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+#wheel{
+  border-radius:10px;
+  display:block;
+  background: linear-gradient(
+    135deg, 
+    rgba(11, 18, 32, 0.9) 0%, 
+    rgba(7, 18, 26, 0.95) 100%
+  );
+  width:100%;
+  height:100%;
+  position: relative;
+  z-index: 2;
+}
+/* 转盘装饰边框 */
+#wheel::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(
+    45deg,
+    #39a2db,
+    #6b9cff,
+    #a78bfa,
+    #6bd3ff
+  );
+  border-radius: 12px;
+  z-index: 1;
+  animation: rotate 8s linear infinite;
+  opacity: 0.5;
+}
+
+@keyframes rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+#wheel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(57, 162, 219, 0.1) 0%,
+    rgba(107, 156, 255, 0.05) 50%,
+    rgba(167, 139, 250, 0.1) 100%
+  );
+  border-radius: 10px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* 改进的指针样式 */
+#pointer{
+  position:absolute;
+  left:50%;
+  top:10px;
+  transform:translateX(-50%);
+  font-size:32px;
+  color:#39a2db;
+  z-index:15;
+  pointer-events:none;
+  text-shadow: 
+    0 0 15px rgba(57, 162, 219, 0.8),
+    0 0 30px rgba(57, 162, 219, 0.4);
+  filter: drop-shadow(0 0 12px rgba(57, 162, 219, 0.6));
+  animation: float 3s ease-in-out infinite; /* 添加浮动动画 */
+}
+
+/* 添加指针浮动动画 */
+@keyframes float {
+  0%, 100% { 
+    transform: translateX(-50%) translateY(0); 
+  }
+  50% { 
+    transform: translateX(-50%) translateY(-5px); 
+  }
+}
+
+#loadingOverlay{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(6,16,26,0.95);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  z-index:2000; /* 提高z-index确保在最上层 */
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+  opacity: 1;
+  visibility: visible;
+}
+
+#loadingOverlay.hidden {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+.loading-text{
+  margin-top:20px;
+  color:#39a2db;
+  font-size:1.2em;
+}
+
+/* action buttons and inputs */
+.actions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-top:8px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+input[type=file]{
+  color:#fff;
+  padding:8px;
+  background:rgba(255,255,255,0.1);
+  border-radius:5px;
+  cursor:pointer;
+}
+input[type=file]::file-selector-button{
+  background:#39a2db;
+  color:white;
+  border:none;
+  padding:6px 12px;
+  border-radius:4px;
+  cursor:pointer;
+}
+
+/* pool visualization */
+.pool-visual{
+  background:rgba(255,255,255,0.03);
+  padding:12px;
+  border-radius:8px;
+  margin-bottom:16px;
+}
+.pool-visual h2{
+  margin:0 0 10px;
+  font-size:1.2em;
+}
+#poolList{
+  margin-bottom:8px;
+}
+.pool-row{
+  display:flex;
+  justify-content:space-between;
+  padding:6px 8px;
+  border-radius:6px;
+  margin-bottom:6px;
+  background:rgba(255,255,255,0.02);
+}
+.bars{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.bar{
+  height:18px;
+  border-radius:9px;
+  background:#132029;
+  overflow:hidden;
+  position:relative;
+}
+.bar > i{
+  position:absolute;
+  left:8px;
+  top:0;
+  bottom:0;
+  display:flex;
+  align-items:center;
+  font-size:12px;
+  padding-right:8px;
+  z-index:1;
+}
+.history{
+  background:rgba(255,255,255,0.03);
+  padding:12px;
+  border-radius:8px;
+}
+.history h2{
+  margin-top:0;
+  font-size:1.2em;
+}
+/* modal */
+.modal{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,0.6);
+  z-index:150;
+  padding:20px;
+}
+.hidden{
+  display:none !important;
+}
+.modal-content{
+  background:linear-gradient(180deg,#07121a,#0b1722);
+  padding:16px;
+  padding-top: 20px;
+  border-radius:10px;
+  max-width:420px;
+  width:90%;
+  color:#e6eef6;
+  box-shadow:0 10px 30px rgba(0,0,0,0.6);
+  position: relative;
+}
+/* 弹窗头部样式 */
+.modal-header {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+/* 关闭按钮新样式 */
+.modal-close-btn {
+  width: 36px;
+  height: 36px;
+  font-size: 24px;
+  cursor: pointer;
+  background-color: transparent;
+  color: #fff;
+  border: 2px solid rgba(57, 162, 219, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.modal-close-btn:hover {
+  background-color: rgba(248, 89, 89, 0.2);
+  border-color: #f85959;
+  color: #ff6b6b;
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 0 15px rgba(248, 89, 89, 0.4);
+}
+
+.modal-close-btn:active {
+  transform: rotate(90deg) scale(0.95);
+  transition: all 0.1s ease;
+}
+
+/* 弹窗内容区域 */
+.modal-body {
+  padding-top: 10px;
+}
+
+/* ===== Button style===== */
+/* From Uiverse.io by Mike11jr */ 
+.btn {
+  width: 130px;
+  height: 40px;
+  font-size: 1.1em;
+  cursor: pointer;
+  background-color: #171717;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  transition: all .4s;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+
+.btn:hover {
+  border-radius: 5px;
+  transform: translateY(-10px);
+  box-shadow: 0 7px 0 -2px #f85959,
+    0 15px 0 -4px #39a2db,
+    0 16px 10px -3px #39a2db;
+}
+
+.btn:active {
+  transition: all 0.2s;
+  transform: translateY(-5px);
+  box-shadow: 0 2px 0 -2px #f85959,
+    0 8px 0 -4px #39a2db,
+    0 12px 10px -3px #39a2db;
+}
+
+/* ===== 新的雷达加载动画 ===== */
+/* From Uiverse.io by mrhyddenn */
+.loader {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  background: transparent;
+  border-radius: 50%;
+  box-shadow: 25px 25px 75px rgba(0,0,0,0.55);
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.loader::before {
+  content: '';
+  position: absolute;
+  inset: 20px;
+  background: transparent;
+  border: 1px dashed #444;
+  border-radius: 50%;
+  box-shadow: inset -5px -5px 25px rgba(0,0,0,0.25),
+              inset 5px 5px 35px rgba(0,0,0,0.25);
+}
+
+.loader::after {
+  content: '';
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 1px dashed #444;
+  box-shadow: inset -5px -5px 25px rgba(0,0,0,0.25),
+              inset 5px 5px 35px rgba(0,0,0,0.25);
+}
+
+.loader span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  background: transparent;
+  transform-origin: top left;
+  animation: radar81 2s linear infinite;
+  border-top: 1px dashed #fff;
+}
+
+.loader span::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #39a2db; /* 将seagreen改为主题色 */
+  transform-origin: top left;
+  transform: rotate(-55deg);
+  filter: blur(30px) drop-shadow(20px 20px 20px #39a2db); /* 将seagreen改为主题色 */
+}
+
+@keyframes radar81 {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+/* 添加一个简单的旋转动画用于转盘指针 */
+@keyframes glow {
+  0%, 100% { 
+    color: #ff6b6b;
+    text-shadow: 0 0 10px rgba(255,107,107,0.8);
+  }
+  50% { 
+    color: #ff9999;
+    text-shadow: 0 0 15px rgba(255,153,153,1);
+  }
+}
+
+/* 响应式布局改进 */
+@media (max-width:900px){
+  .controls{
+    flex-direction:column;
+    align-items:center;
+  }
+  .left, .right{
+    width:100%;
+    max-width:100%;
+  }
+  .wheel-wrap{
+    width:100%;
+    max-width:400px;
+    height:400px;
+    backdrop-filter: blur(3px); /* 移动端减少模糊效果 */
+  }
+  #wheel{
+    width:100%;
+    height:100%;
+  }
+  .actions{
+    justify-content:center;
+  }
+  .btn{
+    width:120px;
+  }
+}
+
+@media (max-width:600px){
+  body{
+    padding:10px;
+  }
+  .wheel-wrap{
+    max-width:350px;
+    height:350px;
+  }
+  .actions{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .btn{
+    width:100%;
+    margin-bottom:8px;
+  }
+  input[type=file]{
+    width:100%;
+    text-align:center;
+  }
+  header h1{
+    font-size:1.5em;
+  }
+}
+
+@media (max-width:400px){
+  .wheel-wrap{
+    max-width:300px;
+    height:300px;
+  }
+  #pointer{
+    font-size:24px;
+    top:5px;
+  }
+}
+
+/* 转盘文本在移动端适应 */
+@media (max-width:500px){
+  .wheel-wrap{
+    max-width:280px;
+    height:280px;
+  }
+}
+</style>
+</head>
+<body>
+<!-- 背景容器 -->
+<div class="container"></div>
+
+<div id="loadingOverlay">
+  <!-- From Uiverse.io by mrhyddenn -->
+  <div class="loader">
+    <span></span>
+  </div>
+  <div class="loading-text">加载中...</div>
+</div>
+
+<main class="app">
+
+  <header>
+    <h1>随机抽奖转盘</h1>
+  </header>
+
+  <section class="controls">
+    <div class="left">
+      <div class="wheel-wrap">
+        <!-- 改进的指针 -->
+        <div id="pointer">▼</div>
+        <canvas id="wheel" width="500" height="500"></canvas>
+      </div>
+
+      <div class="actions">
+        <button id="spinBtn" class="btn">抽 取</button>
+        <input type="file" id="importFile" accept=".json" />
+        <button id="resetBtn" class="btn">重 置</button>
+        <button id="exportLogBtn" class="btn">导 出 结果</button>
+      </div>
+    </div>
+
+    <div class="right">
+      <section class="pool-visual">
+        <h2>奖池（剩余）</h2>
+        <div id="poolList"></div>
+        <div id="poolBars" class="bars"></div>
+      </section>
+
+      <section class="history">
+        <h2>抽取记录</h2>
+        <ol id="historyList"></ol>
+      </section>
+    </div>
+  </section>
+
+<!-- Result Modal -->
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-content">
+    <div class="modal-header">
+      <button id="modalClose" class="modal-close-btn">×</button>
+    </div>
+    <div id="modalBody" class="modal-body"></div>
+  </div>
+</div>
+
+  <footer>
+    <small>可导入 JSON 文件格式: {"A":1,"B":2,...}</small>
+  </footer>
+</main>
+
+<script>
+// Lottery wheel script
+const defaultPrizes = {"A":1,"B":2,"C":3,"D":4,"E":5,"F":6,"G":7};
+
+let initialPrizes = JSON.parse(JSON.stringify(defaultPrizes)); // copy for rarity checks
+let prizes = {}; // current state: {name:count}
+let history = [];
+
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const spinBtn = document.getElementById('spinBtn');
+const resetBtn = document.getElementById('resetBtn');
+const importFile = document.getElementById('importFile');
+const exportLogBtn = document.getElementById('exportLogBtn');
+
+const poolList = document.getElementById('poolList');
+const poolBars = document.getElementById('poolBars');
+const historyList = document.getElementById('historyList');
+
+const modal = document.getElementById('modal');
+const modalBody = document.getElementById('modalBody');
+const modalClose = document.getElementById('modalClose');
+
+const loadingOverlay = document.getElementById('loadingOverlay');
+
+let wheelRotation = 0; // degrees
+let isSpinning = false;
+let segments = []; // {name, weight, startAngle, endAngle, color}
+
+// 改进的页面加载处理
+function hideLoadingOverlay() {
+  // 强制隐藏加载动画
+  loadingOverlay.style.opacity = '0';
+  loadingOverlay.style.visibility = 'hidden';
+  loadingOverlay.style.pointerEvents = 'none';
+  loadingOverlay.style.display = 'none';
+  
+  // 确保页面内容可见
+  document.body.style.overflow = 'auto';
+}
+
+// 使用更可靠的加载检测
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM已加载，开始初始化...');
+  
+  // 延迟一点确保所有DOM元素已就绪
+  setTimeout(function() {
+    // 初始化应用
+    resetTo(defaultPrizes);
+    
+    // 隐藏加载动画
+    setTimeout(hideLoadingOverlay, 500);
+  }, 100);
+});
+
+// 添加window.load作为备用
+window.addEventListener('load', function() {
+  console.log('页面完全加载，隐藏加载动画');
+  
+  // 如果DOMContentLoaded没有触发，这里作为备用
+  setTimeout(hideLoadingOverlay, 1000);
+  
+  // 确保页面内容显示
+  document.body.style.overflow = 'auto';
+});
+
+// 防止加载动画卡住：10秒后强制隐藏
+setTimeout(hideLoadingOverlay, 10000);
+
+function resetTo(prizeObj){
+  // 深拷贝奖池数据
+  prizes = JSON.parse(JSON.stringify(prizeObj));
+  initialPrizes = JSON.parse(JSON.stringify(prizeObj));
+  history = [];
+  drawHistory();
+  buildSegments();
+  renderWheel();
+  renderPool();
+  modal.classList.add('hidden');
+  isSpinning = false;
+}
+
+function buildSegments(){
+  segments = [];
+  const entries = Object.entries(prizes).filter(([k,v]) => v>0);
+  const total = entries.reduce((s,[_k,v]) => s+v,0);
+  if(total === 0) {
+    segments = [];
+    return;
+  }
+  let start = 0;
+  let colorIndex = 0;
+  for(const [name, weight] of entries){
+    const angle = (weight/total) * 2 * Math.PI;
+    const seg = {name, weight, startAngle: start, endAngle: start+angle, color: pickColor(colorIndex++)};
+    segments.push(seg);
+    start += angle;
+  }
+}
+
+function pickColor(i){
+  const palette = ['#FFB86B','#FF7AB6','#6BD3FF','#A78BFA','#6BFFB8','#FFD36B','#6B9CFF','#FF6B6B'];
+  return palette[i % palette.length];
+}
+
+function renderWheel(){
+  const dpr = window.devicePixelRatio || 1;
+  const container = canvas.parentElement;
+  const size = Math.min(container.clientWidth, container.clientHeight, 500);
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const cx = canvas.width/dpr/2;
+  const cy = canvas.height/dpr/2;
+  const radius = Math.min(cx,cy) - 10;
+  ctx.clearRect(0,0,canvas.width/dpr,canvas.height/dpr);
+
+  // draw background circle
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(wheelRotation * Math.PI/180);
+  
+  // draw segments
+  if(segments.length === 0){
+    // empty wheel
+    ctx.fillStyle = '#0b1220';
+    ctx.beginPath();
+    ctx.arc(0,0,radius,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
+  
+  for(const seg of segments){
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.fillStyle = seg.color;
+    ctx.arc(0,0,radius, seg.startAngle, seg.endAngle);
+    ctx.closePath();
+    ctx.fill();
+
+    // draw label
+    ctx.save();
+    const mid = (seg.startAngle+seg.endAngle)/2;
+    ctx.rotate(mid);
+    ctx.translate(radius*0.6,0);
+    ctx.rotate(Math.PI/2);
+    ctx.fillStyle = '#06131a';
+    const fontSize = Math.max(12, radius*0.07);
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`${seg.name} (${seg.weight})`, 0, 0);
+    ctx.restore();
+  }
+  
+  // center circle
+  ctx.beginPath();
+  ctx.fillStyle = '#07121a';
+  ctx.arc(0,0, radius*0.18,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function renderPool(){
+  poolList.innerHTML = '';
+  poolBars.innerHTML = '';
+  const entries = Object.entries(prizes);
+  const total = entries.reduce((s,[_k,v]) => s+v,0);
+  
+  for(const [name, count] of entries){
+    const row = document.createElement('div');
+    row.className = 'pool-row';
+    row.innerHTML = `<strong>${name}</strong><span>${count}</span>`;
+    poolList.appendChild(row);
+
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const inner = document.createElement('div');
+    inner.style.width = (total===0?0: (count/total*100)) + '%';
+    inner.style.height = '100%';
+    inner.style.background = pickColor(name.charCodeAt(0)%8);
+    inner.style.transition = 'width 0.5s ease';
+    
+    const label = document.createElement('i');
+    label.textContent = `${name} · ${count} (${total===0?0:( (count/total*100).toFixed(1))}%)`;
+    bar.appendChild(inner);
+    bar.appendChild(label);
+    poolBars.appendChild(bar);
+  }
+}
+
+function drawHistory(){
+  historyList.innerHTML = '';
+  for(const rec of history){
+    const li = document.createElement('li');
+    li.textContent = `${rec.time} — ${rec.name} · 概率 ${rec.chance}%`;
+    historyList.appendChild(li);
+  }
+}
+
+// Weighted random selection
+function weightedPick(){
+  const entries = Object.entries(prizes).filter(([k,v])=>v>0);
+  const total = entries.reduce((s,[_k,v])=>s+v,0);
+  if(total===0) return null;
+  const r = Math.random()*total;
+  let cum = 0;
+  for(const [name, weight] of entries){
+    cum += weight;
+    if(r < cum) return {name, weight, total};
+  }
+  return {name: entries[entries.length-1][0], weight: entries[entries.length-1][1], total};
+}
+
+function showModal(contentHtml){
+  modalBody.innerHTML = contentHtml;
+  modal.classList.remove('hidden');
+}
+
+modalClose.addEventListener('click', ()=>modal.classList.add('hidden'));
+modal.addEventListener('click', (e)=>{ if(e.target===modal) modal.classList.add('hidden'); });
+
+spinBtn.addEventListener('click', function(){
+  if(isSpinning) return;
+  
+  const pick = weightedPick();
+  if(!pick){
+    showModal('<h3>奖池为空</h3><p>所有奖品已被抽完。</p>');
+    return;
+  }
+  
+// 添加指针动画效果
+const pointer = document.getElementById('pointer');
+// 先停止浮动动画，然后添加发光动画
+pointer.style.animation = 'none';
+setTimeout(() => {
+  pointer.style.animation = 'glow 0.5s infinite alternate';
+}, 10);
+  
+  // 计算概率
+  const chance = ((pick.weight / pick.total) * 100).toFixed(2);
+
+  // 找到对应的扇形段
+  const seg = segments.find(s=>s.name===pick.name);
+  if(!seg){
+    console.error('找不到对应的扇形段:', pick.name);
+    return;
+  }
+  
+// 计算扇形中间的角度（弧度）
+const segMidRad = (seg.startAngle + seg.endAngle) / 2;
+// 转换为度数（canvas中0度在右侧，顺时针为正）
+let segMidDeg = segMidRad * 180 / Math.PI;
+
+// 将扇形中间旋转到指针位置
+// 添加额外的旋转圈数（3-6圈）
+const extraSpins = 3 + Math.floor(Math.random() * 3);
+// 正确计算目标角度：确保扇形中间指向顶部指针
+const target = 360 * extraSpins + (270 - segMidDeg); // 270度对应顶部指针位置
+  
+  isSpinning = true;
+  
+  // 动画参数
+  const duration = 4200; // 动画总时长
+  const startTime = Date.now();
+  const startRotation = wheelRotation % 360;
+  const rotationDelta = target - startRotation;
+  
+  // 动画函数
+  function animateSpin() {
+    const currentTime = Date.now();
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // 缓动函数：先快后慢
+    const easeProgress = 1 - Math.pow(1 - progress, 3);
+    
+    // 更新旋转角度
+    wheelRotation = startRotation + rotationDelta * easeProgress;
+    
+    // 重绘转盘
+    renderWheel();
+    
+    if (progress < 1) {
+      // 继续动画
+      requestAnimationFrame(animateSpin);
+    } else {
+      // 动画完成
+      finalizePick(pick, chance);
+    }
+  }
+  
+  // 开始动画
+  requestAnimationFrame(animateSpin);
+});
+
+function finalizePick(pick, chance){
+  // 停止指针动画，恢复浮动动画
+  const pointer = document.getElementById('pointer');
+  pointer.style.animation = 'none';
+  setTimeout(() => {
+    pointer.style.animation = 'float 3s ease-in-out infinite';
+  }, 10);
+  
+  // record history with timestamp
+  const time = new Date().toLocaleString();
+  history.unshift({time, name: pick.name, chance});
+  
+  // decrement prize
+  prizes[pick.name] = Math.max(0, prizes[pick.name]-1);
+  
+  // determine rarity: if initial count <=1 OR initial weight is very small (<=1)
+  const init = initialPrizes[pick.name] || 0;
+  const isRare = init <= 1;
+  
+  // show modal
+  const special = isRare ? '<p style="color:#ffd700;font-weight:bold;">恭喜！抽中稀有奖品🎉</p>' : '';
+  const html = `<h3>抽中：${pick.name}</h3>
+    <p>本次概率：${chance}%</p>
+    ${special}
+    <p>剩余${pick.name}: ${prizes[pick.name]}</p>`;
+  showModal(html);
+
+  // update UI
+  buildSegments();
+  renderWheel();
+  renderPool();
+  drawHistory();
+  isSpinning = false;
+
+  // check all drawn
+  const totalLeft = Object.values(prizes).reduce((s,v)=>s+v,0);
+  if(totalLeft === 0){
+    // show final summary
+    const rows = history.map(h=>`<li>${h.time} — ${h.name} · 概率 ${h.chance}%</li>`).join('');
+    showModal(`<h3>所有奖品已抽完</h3><p>以下为所有抽取记录：</p><ol>${rows}</ol>`);
+  }
+}
+
+resetBtn.addEventListener('click', ()=>{
+  if(isSpinning) return;
+  if(confirm('确认重置奖池为默认？')) resetTo(defaultPrizes);
+});
+
+importFile.addEventListener('change', (e)=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      const obj = JSON.parse(ev.target.result);
+      // validate: object with string keys and positive integer values
+      const ok = Object.keys(obj).every(k => typeof k === 'string' && Number.isFinite(obj[k]) && obj[k] >= 0);
+      if(!ok) throw new Error('格式不正确: 必须为{"名称":数量,...}格式，数量为0或正整数');
+      
+      // 完全覆盖当前奖池
+      resetTo(obj);
+      alert(`导入成功！共导入${Object.keys(obj).length}种奖品`);
+      
+      // 清除文件输入，以便可以再次导入相同文件
+      importFile.value = '';
+      
+    }catch(err){
+      alert('导入失败: ' + err.message);
+      importFile.value = '';
+    }
+  };
+  reader.readAsText(f);
+});
+
+exportLogBtn.addEventListener('click', ()=>{
+  if(history.length === 0){
+    alert('目前没有抽取记录');
+    return;
+  }
+  // prepare CSV
+  const lines = ['time,name,chance'];
+  history.slice().reverse().forEach(h => lines.push(`${h.time},${h.name},${h.chance}`));
+  const blob = new Blob([lines.join('\n')], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `lottery_history_${Date.now()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// 刷新/关闭页面确认提示
+window.addEventListener('beforeunload', function(event) {
+  // 只在有抽取记录时显示提示
+  if (history.length > 0) {
+    event.preventDefault();
+    event.returnValue = '刷新将会丢失及重置,您确认吗?';
+  }
+});
+
+// redraw on resize
+window.addEventListener('resize', ()=>{
+  renderWheel();
+});
+
+// allow exporting current prize config as JSON via right-click or similar
+window.getCurrentPrizesAsJSON = () => JSON.stringify(prizes, null, 2);
+</script>
+
+</body>
+</html>
