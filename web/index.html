@@ -6,10 +6,9 @@
 <title>随机抽奖转盘</title>
 
 <style>
-/* Base page styles */
 :root{
-  --bg:#0f1720;
-  --card:#0b1220;
+  --bg:#000000;
+  --card:#000000;
   --muted:#9aa4b2;
   --accent:#39a2db;
 }
@@ -32,7 +31,7 @@ body{
   left: 0;
   width: 100%;
   height: 100%;
-  --s: 200px; /* control the size */
+  --s: 200px;
   --c1: #1d1d1d;
   --c2: #4e4f51;
   --c3: #3c3c3c;
@@ -167,7 +166,7 @@ header h1{margin:8px 0 18px;font-weight:600;text-align:center}
   pointer-events: none;
 }
 
-/* 改进的指针样式 */
+/* 指针样式 */
 #pointer{
   position:absolute;
   left:50%;
@@ -181,10 +180,10 @@ header h1{margin:8px 0 18px;font-weight:600;text-align:center}
     0 0 15px rgba(57, 162, 219, 0.8),
     0 0 30px rgba(57, 162, 219, 0.4);
   filter: drop-shadow(0 0 12px rgba(57, 162, 219, 0.6));
-  animation: float 3s ease-in-out infinite; /* 添加浮动动画 */
+  animation: float 3s ease-in-out infinite; /* 浮动动画 */
 }
 
-/* 添加指针浮动动画 */
+/* 指针浮动动画 */
 @keyframes float {
   0%, 100% { 
     transform: translateX(-50%) translateY(0); 
@@ -205,7 +204,7 @@ header h1{margin:8px 0 18px;font-weight:600;text-align:center}
   flex-direction:column;
   justify-content:center;
   align-items:center;
-  z-index:2000; /* 提高z-index确保在最上层 */
+  z-index:2000;
   transition: opacity 0.5s ease, visibility 0.5s ease;
   opacity: 1;
   visibility: visible;
@@ -222,7 +221,7 @@ header h1{margin:8px 0 18px;font-weight:600;text-align:center}
   font-size:1.2em;
 }
 
-/* action buttons and inputs */
+/* 操作按钮和输入 */
 .actions{
   display:flex;
   gap:8px;
@@ -247,7 +246,7 @@ input[type=file]::file-selector-button{
   cursor:pointer;
 }
 
-/* pool visualization */
+/* pool可视化 */
 .pool-visual{
   background:rgba(255,255,255,0.03);
   padding:12px;
@@ -277,7 +276,7 @@ input[type=file]::file-selector-button{
 .bar{
   height:18px;
   border-radius:9px;
-  background:#132029;
+  background:#000000;
   overflow:hidden;
   position:relative;
 }
@@ -316,12 +315,15 @@ input[type=file]::file-selector-button{
   display:none !important;
 }
 .modal-content{
-  background:linear-gradient(180deg,#07121a,#0b1722);
+  background:linear-gradient(180deg,#000000,#000000);
   padding:16px;
   padding-top: 20px;
   border-radius:10px;
   max-width:420px;
   width:90%;
+  max-height:80vh;
+  display:flex;
+  flex-direction:column;
   color:#e6eef6;
   box-shadow:0 10px 30px rgba(0,0,0,0.6);
   position: relative;
@@ -374,10 +376,11 @@ input[type=file]::file-selector-button{
 /* 弹窗内容区域 */
 .modal-body {
   padding-top: 10px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 /* ===== Button style===== */
-/* From Uiverse.io by Mike11jr */ 
 .btn {
   width: 130px;
   height: 40px;
@@ -407,76 +410,75 @@ input[type=file]::file-selector-button{
     0 12px 10px -3px #39a2db;
 }
 
-/* ===== 新的雷达加载动画 ===== */
-/* From Uiverse.io by mrhyddenn */
-.loader {
-  position: relative;
-  width: 150px;
-  height: 150px;
-  background: transparent;
-  border-radius: 50%;
-  box-shadow: 25px 25px 75px rgba(0,0,0,0.55);
-  border: 1px solid #333;
+/* ===== Liquid 加载动画 ===== */
+.liquid-loader {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 5px;
+  padding: 20px;
+  font-family: system-ui, sans-serif;
+}
+.loader-track {
+  position: relative;
+  width: 180px;
+  height: 32px;
+  background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+  border-radius: 16px;
   overflow: hidden;
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.6),
+    0 1px 3px rgba(255,255,255,0.1);
 }
-
-.loader::before {
-  content: '';
+.liquid-fill {
   position: absolute;
-  inset: 20px;
-  background: transparent;
-  border: 1px dashed #444;
-  border-radius: 50%;
-  box-shadow: inset -5px -5px 25px rgba(0,0,0,0.25),
-              inset 5px 5px 35px rgba(0,0,0,0.25);
+  top: 2px;
+  left: 2px;
+  height: calc(100% - 4px);
+  background: linear-gradient(90deg, #4f46e5, #7c3aed, #ec4899, #f59e0b);
+  border-radius: 14px;
+  animation:
+    fillProgress 4s ease-out infinite,
+    colorShift 3s linear infinite;
+  box-shadow:
+    0 0 12px rgba(124,58,237,0.4),
+    inset 0 1px 2px rgba(255,255,255,0.2);
 }
-
-.loader::after {
-  content: '';
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 1px dashed #444;
-  box-shadow: inset -5px -5px 25px rgba(0,0,0,0.25),
-              inset 5px 5px 35px rgba(0,0,0,0.25);
+.loading-text {
+  color: #39a2db;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  animation: textGlow 1s ease-in-out infinite;
+  margin-bottom: 4px;
 }
-
-.loader span {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 50%;
-  height: 100%;
-  background: transparent;
-  transform-origin: top left;
-  animation: radar81 2s linear infinite;
-  border-top: 1px dashed #fff;
+.dot {
+  margin-left: 3px;
+  animation: blink 1.5s infinite;
 }
-
-.loader span::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: #39a2db; /* 将seagreen改为主题色 */
-  transform-origin: top left;
-  transform: rotate(-55deg);
-  filter: blur(30px) drop-shadow(20px 20px 20px #39a2db); /* 将seagreen改为主题色 */
+.dot:nth-of-type(1) { animation-delay: 0s; }
+.dot:nth-of-type(2) { animation-delay: 0.3s; }
+.dot:nth-of-type(3) { animation-delay: 0.6s; }
+@keyframes fillProgress {
+  0%   { width: 4px; }
+  25%  { width: 25%; }
+  50%  { width: 50%; }
+  75%  { width: 75%; }
+  100% { width: calc(100% - 4px); }
 }
-
-@keyframes radar81 {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+@keyframes colorShift {
+  0%   { filter: hue-rotate(0deg)   brightness(1); }
+  33%  { filter: hue-rotate(120deg) brightness(1.1); }
+  66%  { filter: hue-rotate(240deg) brightness(0.9); }
+  100% { filter: hue-rotate(360deg) brightness(1); }
+}
+@keyframes textGlow {
+  0%,100% { opacity:0.7; text-shadow:0 0 8px rgba(139,92,246,0.3); }
+  50%     { opacity:1;   text-shadow:0 0 16px rgba(139,92,246,0.6); }
+}
+@keyframes blink {
+  0%,50%  { opacity:1; }
+  51%,100%{ opacity:0; }
 }
 /* 添加一个简单的旋转动画用于转盘指针 */
 @keyframes glow {
@@ -490,7 +492,15 @@ input[type=file]::file-selector-button{
   }
 }
 
-/* 响应式布局改进 */
+/* 弹窗打开时主内容模糊（只模糊非弹窗部分） */
+.app-blurred > header,
+.app-blurred > .controls,
+.app-blurred > footer {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+  transition: filter 0.25s ease;
+}
 @media (max-width:900px){
   .controls{
     flex-direction:column;
@@ -568,11 +578,12 @@ input[type=file]::file-selector-button{
 <div class="container"></div>
 
 <div id="loadingOverlay">
-  <!-- From Uiverse.io by mrhyddenn -->
-  <div class="loader">
-    <span></span>
+  <div class="liquid-loader">
+    <div class="loading-text">Loading<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
+    <div class="loader-track">
+      <div class="liquid-fill"></div>
+    </div>
   </div>
-  <div class="loading-text">加载中...</div>
 </div>
 
 <main class="app">
@@ -600,7 +611,7 @@ input[type=file]::file-selector-button{
     <div class="right">
       <section class="pool-visual">
         <h2>奖池（剩余）</h2>
-        <div id="poolList"></div>
+        <div id="poolList" style="display:none"></div>
         <div id="poolBars" class="bars"></div>
       </section>
 
@@ -622,16 +633,15 @@ input[type=file]::file-selector-button{
 </div>
 
   <footer>
-    <small>可导入 JSON 文件格式: {"A":1,"B":2,...}</small>
+    <small>By-MorningStarsX</small>
   </footer>
 </main>
 
 <script>
-// Lottery wheel script
 const defaultPrizes = {"A":1,"B":2,"C":3,"D":4,"E":5,"F":6,"G":7};
 
-let initialPrizes = JSON.parse(JSON.stringify(defaultPrizes)); // copy for rarity checks
-let prizes = {}; // current state: {name:count}
+let initialPrizes = JSON.parse(JSON.stringify(defaultPrizes));
+let prizes = {};
 let history = [];
 
 const canvas = document.getElementById('wheel');
@@ -651,7 +661,7 @@ const modalClose = document.getElementById('modalClose');
 
 const loadingOverlay = document.getElementById('loadingOverlay');
 
-let wheelRotation = 0; // degrees
+let wheelRotation = 0; // 度数
 let isSpinning = false;
 let segments = []; // {name, weight, startAngle, endAngle, color}
 
@@ -677,7 +687,7 @@ document.addEventListener('DOMContentLoaded', function() {
     resetTo(defaultPrizes);
     
     // 隐藏加载动画
-    setTimeout(hideLoadingOverlay, 500);
+    setTimeout(hideLoadingOverlay, 3000);
   }, 100);
 });
 
@@ -745,14 +755,13 @@ function renderWheel(){
   const radius = Math.min(cx,cy) - 10;
   ctx.clearRect(0,0,canvas.width/dpr,canvas.height/dpr);
 
-  // draw background circle
+  // 绘制背景圆
   ctx.save();
   ctx.translate(cx,cy);
   ctx.rotate(wheelRotation * Math.PI/180);
   
-  // draw segments
+  // 绘制线段
   if(segments.length === 0){
-    // empty wheel
     ctx.fillStyle = '#0b1220';
     ctx.beginPath();
     ctx.arc(0,0,radius,0,Math.PI*2);
@@ -769,7 +778,7 @@ function renderWheel(){
     ctx.closePath();
     ctx.fill();
 
-    // draw label
+    // 绘制标签
     ctx.save();
     const mid = (seg.startAngle+seg.endAngle)/2;
     ctx.rotate(mid);
@@ -783,7 +792,7 @@ function renderWheel(){
     ctx.restore();
   }
   
-  // center circle
+  // 中心圆
   ctx.beginPath();
   ctx.fillStyle = '#07121a';
   ctx.arc(0,0, radius*0.18,0,Math.PI*2);
@@ -829,7 +838,7 @@ function drawHistory(){
   }
 }
 
-// Weighted random selection
+// 加权随机选择
 function weightedPick(){
   const entries = Object.entries(prizes).filter(([k,v])=>v>0);
   const total = entries.reduce((s,[_k,v])=>s+v,0);
@@ -846,10 +855,19 @@ function weightedPick(){
 function showModal(contentHtml){
   modalBody.innerHTML = contentHtml;
   modal.classList.remove('hidden');
+  document.querySelector('.app').classList.add('app-blurred');
 }
 
-modalClose.addEventListener('click', ()=>modal.classList.add('hidden'));
-modal.addEventListener('click', (e)=>{ if(e.target===modal) modal.classList.add('hidden'); });
+modalClose.addEventListener('click', ()=>{
+  modal.classList.add('hidden');
+  document.querySelector('.app').classList.remove('app-blurred');
+});
+modal.addEventListener('click', (e)=>{
+  if(e.target===modal){
+    modal.classList.add('hidden');
+    document.querySelector('.app').classList.remove('app-blurred');
+  }
+});
 
 spinBtn.addEventListener('click', function(){
   if(isSpinning) return;
@@ -933,18 +951,18 @@ function finalizePick(pick, chance){
     pointer.style.animation = 'float 3s ease-in-out infinite';
   }, 10);
   
-  // record history with timestamp
+  // 用时间戳记录历史
   const time = new Date().toLocaleString();
   history.unshift({time, name: pick.name, chance});
   
-  // decrement prize
+  // 减少奖金
   prizes[pick.name] = Math.max(0, prizes[pick.name]-1);
   
-  // determine rarity: if initial count <=1 OR initial weight is very small (<=1)
+  // 确定稀有度：如果初始数量 <=1 或初始重量非常小 (<=1)
   const init = initialPrizes[pick.name] || 0;
   const isRare = init <= 1;
   
-  // show modal
+  // 显示模态
   const special = isRare ? '<p style="color:#ffd700;font-weight:bold;">恭喜！抽中稀有奖品🎉</p>' : '';
   const html = `<h3>抽中：${pick.name}</h3>
     <p>本次概率：${chance}%</p>
@@ -952,17 +970,16 @@ function finalizePick(pick, chance){
     <p>剩余${pick.name}: ${prizes[pick.name]}</p>`;
   showModal(html);
 
-  // update UI
+  // UI
   buildSegments();
   renderWheel();
   renderPool();
   drawHistory();
   isSpinning = false;
 
-  // check all drawn
+  // 检查所有已绘制
   const totalLeft = Object.values(prizes).reduce((s,v)=>s+v,0);
   if(totalLeft === 0){
-    // show final summary
     const rows = history.map(h=>`<li>${h.time} — ${h.name} · 概率 ${h.chance}%</li>`).join('');
     showModal(`<h3>所有奖品已抽完</h3><p>以下为所有抽取记录：</p><ol>${rows}</ol>`);
   }
@@ -981,7 +998,7 @@ importFile.addEventListener('change', (e)=>{
   reader.onload = function(ev){
     try{
       const obj = JSON.parse(ev.target.result);
-      // validate: object with string keys and positive integer values
+      // 验证：具有字符串键和正整数值的对象
       const ok = Object.keys(obj).every(k => typeof k === 'string' && Number.isFinite(obj[k]) && obj[k] >= 0);
       if(!ok) throw new Error('格式不正确: 必须为{"名称":数量,...}格式，数量为0或正整数');
       
@@ -1008,12 +1025,14 @@ exportLogBtn.addEventListener('click', ()=>{
   // prepare CSV
   const lines = ['time,name,chance'];
   history.slice().reverse().forEach(h => lines.push(`${h.time},${h.name},${h.chance}`));
-  const blob = new Blob([lines.join('\n')], {type: 'text/csv'});
+  const blob = new Blob([lines.join('\n')], {type: 'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = `lottery_history_${Date.now()}.csv`;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 });
 
@@ -1026,12 +1045,12 @@ window.addEventListener('beforeunload', function(event) {
   }
 });
 
-// redraw on resize
+// 在调整大小时重新绘制
 window.addEventListener('resize', ()=>{
   renderWheel();
 });
 
-// allow exporting current prize config as JSON via right-click or similar
+// 允许通过右键或类似方式将当前奖品配置导出为 JSON
 window.getCurrentPrizesAsJSON = () => JSON.stringify(prizes, null, 2);
 </script>
 
