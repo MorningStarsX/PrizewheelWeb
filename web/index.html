@@ -1036,6 +1036,12 @@ exportLogBtn.addEventListener('click', ()=>{
   URL.revokeObjectURL(url);
 });
 
+//右键屏蔽
+document.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  return false;
+});
+
 // 刷新/关闭页面确认提示
 window.addEventListener('beforeunload', function(event) {
   // 只在有抽取记录时显示提示
